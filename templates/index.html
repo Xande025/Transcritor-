@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ Sistema de Transcrição - Whisper AI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .card-header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card-content {
+            padding: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f8f9fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: #4CAF50;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .config-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .config-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .config-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .config-group select,
+        .config-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .config-group select:focus,
+        .config-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            transform: scale(1.2);
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .recent-files {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .recent-files h3 {
+            margin-bottom: 20px;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .file-info {
+            flex-grow: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .file-details {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .download-btn {
+            background: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #0056b3;
+        }
+
+        .ffmpeg-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .ffmpeg-ok {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .ffmpeg-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .config-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-microphone"></i> Sistema de Transcrição</h1>
+            <p>Transcreva áudios e vídeos usando Whisper AI</p>
+        </div>
+
+        <!-- Status do FFmpeg -->
+        <div id="ffmpeg-status" class="ffmpeg-status" style="display: none;">
+            <i class="fas fa-tools"></i>
+            <span id="ffmpeg-message"></span>
+        </div>
+
+        <div class="main-card">
+            <div class="card-header">
+                <h2><i class="fas fa-upload"></i> Upload e Configuração</h2>
+            </div>
+            <div class="card-content">
+                <!-- Área de Upload -->
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        Clique aqui ou arraste um arquivo de áudio/vídeo
+                    </div>
+                    <div class="upload-hint">
+                        Formatos suportados: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, AVI, MKV, MOV
+                    </div>
+                    <input type="file" id="file-input" class="file-input" accept="audio/*,video/*">
+                </div>
+
+                <!-- Arquivo Selecionado -->
+                <div id="file-info" style="display: none;" class="status-message status-success">
+                    <i class="fas fa-file-audio"></i>
+                    <span id="file-name"></span>
+                    <span id="file-size"></span>
+                </div>
+
+                <!-- Configurações -->
+                <div class="config-section">
+                    <div class="config-group">
+                        <label for="modelo">
+                            <i class="fas fa-brain"></i> Modelo Whisper
+                        </label>
+                        <select id="modelo">
+                            <option value="tiny">Tiny - Muito rápido (~39 MB)</option>
+                            <option value="base">Base - Rápido (~74 MB)</option>
+                            <option value="small">Small - Equilibrado (~244 MB)</option>
+                            <option value="medium" selected>Medium - Recomendado (~769 MB)</option>
+                            <option value="large">Large - Máxima qualidade (~1550 MB)</option>
+                        </select>
+                    </div>
+
+                    <div class="config-group">
+                        <label for="idioma">
+                            <i class="fas fa-globe"></i> Idioma
+                        </label>
+                        <select id="idioma">
+                            <option value="auto">Auto-detectar</option>
+                            <option value="pt" selected>Português</option>
+                            <option value="en">Inglês</option>
+                            <option value="es">Espanhol</option>
+                            <option value="fr">Francês</option>
+                            <option value="de">Alemão</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+
+                    <div class="config-group">
+                        <label for="formato">
+                            <i class="fas fa-file-alt"></i> Formato de Saída
+                        </label>
+                        <select id="formato">
+                            <option value=".txt" selected>Texto simples (.txt)</option>
+                            <option value=".srt">Legendas SRT (.srt)</option>
+                            <option value=".vtt">WebVTT (.vtt)</option>
+                        </select>
+                    </div>
+
+                    <div class="config-group">
+                        <label>
+                            <i class="fas fa-language"></i> Opções Avançadas
+                        </label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="traduzir">
+                            <label for="traduzir">Traduzir para inglês</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botão de Transcrição -->
+                <button id="transcribe-btn" class="btn btn-primary" style="width: 100%;" disabled>
+                    <i class="fas fa-play"></i> Iniciar Transcrição
+                </button>
+
+                <!-- Seção de Progresso -->
+                <div id="progress-section" class="progress-section">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div id="progress-text" class="progress-text">Preparando...</div>
+                </div>
+
+                <!-- Resultado -->
+                <div id="result-section" style="display: none;">
+                    <div id="result-message" class="status-message"></div>
+                    <div id="download-section" style="display: none;">
+                        <a id="download-link" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-download"></i> Baixar Transcrição
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Arquivos Recentes -->
+        <div class="recent-files">
+            <h3><i class="fas fa-history"></i> Arquivos Recentes</h3>
+            <div id="recent-files-list">
+                <div style="text-align: center; color: #666;">
+                    <i class="fas fa-spinner loading"></i> Carregando...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let currentTaskId = null;
+
+        // Elementos do DOM
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const transcribeBtn = document.getElementById('transcribe-btn');
+        const progressSection = document.getElementById('progress-section');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const resultSection = document.getElementById('result-section');
+        const resultMessage = document.getElementById('result-message');
+        const downloadSection = document.getElementById('download-section');
+        const downloadLink = document.getElementById('download-link');
+
+        // Verificar FFmpeg ao carregar
+        checkFFmpeg();
+        loadRecentFiles();
+
+        // Event listeners para upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        transcribeBtn.addEventListener('click', startTranscription);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            selectedFile = file;
+            
+            // Mostrar informações do arquivo
+            fileName.textContent = file.name;
+            fileSize.textContent = ` (${formatFileSize(file.size)})`;
+            fileInfo.style.display = 'block';
+            
+            // Habilitar botão de transcrição
+            transcribeBtn.disabled = false;
+            
+            // Upload do arquivo
+            uploadFile(file);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentTaskId = result.task_id;
+                    console.log('Arquivo enviado:', result);
+                } else {
+                    showError('Erro ao enviar arquivo: ' + result.error);
+                }
+            } catch (error) {
+                showError('Erro de conexão: ' + error.message);
+            }
+        }
+
+        async function startTranscription() {
+            if (!currentTaskId) {
+                showError('Nenhum arquivo selecionado');
+                return;
+            }
+
+            const config = {
+                task_id: currentTaskId,
+                modelo: document.getElementById('modelo').value,
+                idioma: document.getElementById('idioma').value,
+                traduzir: document.getElementById('traduzir').checked,
+                formato: document.getElementById('formato').value
+            };
+
+            try {
+                transcribeBtn.disabled = true;
+                progressSection.style.display = 'block';
+                resultSection.style.display = 'none';
+
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    monitorProgress(currentTaskId);
+                } else {
+                    showError('Erro ao iniciar transcrição: ' + result.error);
+                    transcribeBtn.disabled = false;
+                    progressSection.style.display = 'none';
+                }
+            } catch (error) {
+                showError('Erro de conexão: ' + error.message);
+                transcribeBtn.disabled = false;
+                progressSection.style.display = 'none';
+            }
+        }
+
+        async function monitorProgress(taskId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/status/${taskId}`);
+                    const status = await response.json();
+
+                    progressFill.style.width = status.progress + '%';
+                    progressText.textContent = status.message;
+
+                    if (status.status === 'completed') {
+                        clearInterval(interval);
+                        showSuccess('Transcrição concluída!', status.output_file);
+                        loadRecentFiles(); // Atualizar lista de arquivos
+                    } else if (status.status === 'error') {
+                        clearInterval(interval);
+                        showError('Erro na transcrição: ' + status.message);
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    showError('Erro ao verificar status: ' + error.message);
+                }
+            }, 2000);
+        }
+
+        function showSuccess(message, outputFile) {
+            resultSection.style.display = 'block';
+            resultMessage.className = 'status-message status-success';
+            resultMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            
+            if (outputFile) {
+                downloadSection.style.display = 'block';
+                downloadLink.href = `/download/${outputFile}`;
+            }
+            
+            transcribeBtn.disabled = false;
+            progressSection.style.display = 'none';
+        }
+
+        function showError(message) {
+            resultSection.style.display = 'block';
+            resultMessage.className = 'status-message status-error';
+            resultMessage.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            downloadSection.style.display = 'none';
+            
+            transcribeBtn.disabled = false;
+            progressSection.style.display = 'none';
+        }
+
+        async function checkFFmpeg() {
+            try {
+                const response = await fetch('/check_ffmpeg');
+                const result = await response.json();
+                
+                const statusDiv = document.getElementById('ffmpeg-status');
+                const messageSpan = document.getElementById('ffmpeg-message');
+                
+                statusDiv.style.display = 'flex';
+                
+                if (result.status === 'ok') {
+                    statusDiv.className = 'ffmpeg-status ffmpeg-ok';
+                    messageSpan.textContent = `FFmpeg OK - ${result.version}`;
+                } else {
+                    statusDiv.className = 'ffmpeg-status ffmpeg-error';
+                    messageSpan.textContent = `FFmpeg: ${result.message}`;
+                }
+            } catch (error) {
+                console.error('Erro ao verificar FFmpeg:', error);
+            }
+        }
+
+        async function loadRecentFiles() {
+            try {
+                const response = await fetch('/recent');
+                const files = await response.json();
+                
+                const listDiv = document.getElementById('recent-files-list');
+                
+                if (files.length === 0) {
+                    listDiv.innerHTML = '<div style="text-align: center; color: #666;">Nenhum arquivo encontrado</div>';
+                    return;
+                }
+                
+                listDiv.innerHTML = files.map(file => `
+                    <div class="file-item fade-in">
+                        <div class="file-info">
+                            <div class="file-name">${file.filename}</div>
+                            <div class="file-details">
+                                ${formatFileSize(file.size)} • ${formatDate(file.modified)}
+                            </div>
+                        </div>
+                        <a href="${file.download_url}" class="download-btn">
+                            <i class="fas fa-download"></i> Baixar
+                        </a>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Erro ao carregar arquivos:', error);
+                document.getElementById('recent-files-list').innerHTML = 
+                    '<div style="text-align: center; color: #dc3545;">Erro ao carregar arquivos</div>';
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
+        }
+
+        // Atualizar lista de arquivos a cada 30 segundos
+        setInterval(loadRecentFiles, 30000);
+    </script>
+</body>
+</html>
